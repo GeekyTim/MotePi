@@ -78,10 +78,13 @@ all50 = [50]
 police = [(all50, [0, 0, 255], 0.5),
           (all50, [255, 0, 0], 0.5)]
 
+import queue
+import threading
 
-class MQTTHandler:
 
-    def __init__(self):
+class MQTTHandler(threading.Thread):
+
+    def __init__(self, q, loop_time=1.0 / 60):
         MotePi.configure_channel(1, 16, False)
         MotePi.configure_channel(2, 16, False)
         MotePi.configure_channel(3, 16, False)
@@ -90,6 +93,9 @@ class MQTTHandler:
         MotePi.clear()
         MotePi.show()
 
+        self.__queue = q
+        self.__qtimeout = loop_time
+
         self.__command = ""
         self.__params = {}
         self.__initial = True  # Is this the first time in this pattern?
@@ -97,7 +103,33 @@ class MQTTHandler:
         self.__delay = 0.01  # Default delay
         self.__patternchanged = False
 
+        super(MQTTHandler, self).__init__()
         # self.runmotepi()
+
+    def onthread(self, function, *args, **kwargs):
+        self.__queue.put((function, args, kwargs))
+
+    def run(self):
+        while True:
+            try:
+                self.__command, self.__params, kwargs = self.__queue.get(timeout=self.__qtimeout)
+            except queue.Empty:
+                self.idle()
+
+    def idle(self):
+        # put the code you would have put in the `run` loop here
+        sleeptime = 0.5
+        if self.__command != "":
+            try:
+                func = getattr(MQTTHandler, self.__command)
+                func(self)
+                sleeptime = self.__delay
+            except:
+                print("Unknown command: %s", self.__command)
+
+        MotePi.show()
+        time.sleep(sleeptime)
+        print("slept")
 
     def runpattern(self, patternset):
         for pattern in patternset:
