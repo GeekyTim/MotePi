@@ -111,7 +111,6 @@ class MQTTHandler(threading.Thread):
         self.__initial = True  # Is this the first time in this pattern?
         self.__tempvalues = {}  # A dict of values to use between calls to a pattern function
         self.__delay = 0.01  # Default delay
-        self.__patternchanged = False
 
         super(MQTTHandler, self).__init__()
 
@@ -123,24 +122,31 @@ class MQTTHandler(threading.Thread):
         while True:
             try:
                 command, args, kwargs = self.__queue.get(timeout=self.__qtimeout)
-                func = getattr(MQTTHandler, command.lower())
+                #func = getattr(MQTTHandler, command.lower())
                 self.__command = command.lower()
                 self.__motepifunction = func
                 self.__params = args
+                self.__initial = False
             except queue.Empty:
+                print("Queue Empty")
                 self.idle()
             except AttributeError:
+                print("AttributeError")
                 pass
             except:
+                print("otherexception")
                 pass
 
     def idle(self):
         sleeptime = 0.5
         if self.__command != "":
             try:
-                func(self.__motepifunction)
+                func = getattr(MQTTHandler, self.__command)
+                print(func)
+                func(self)
                 sleeptime = self.__delay
             except:
+                print("Idle Exception")
                 pass
 
         MotePi.show()
