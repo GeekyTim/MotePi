@@ -1,9 +1,21 @@
 import math
+import queue
+import threading
 import time
 from colorsys import hsv_to_rgb
 from subprocess import check_call
 
 import motephat as MotePi
+
+'''
+{"mqttmessage": {
+            "device": "MotePi",
+            "version": 1,
+            "payload": {
+				"command": "bilgetank",
+				"params": {"test":"test"}}}
+        }
+'''
 
 top_s50 = [50, 50, 50, 50,
            50, 50, 50, 50,
@@ -79,9 +91,9 @@ police = [(all50, [0, 0, 255], 0.5),
           (all50, [255, 0, 0], 0.5)]
 
 
-class MQTTHandler:
+class MQTTHandler(threading.Thread):
 
-    def __init__(self):
+    def __init__(self, q, loop_time=1.0 / 60):
         MotePi.configure_channel(1, 16, False)
         MotePi.configure_channel(2, 16, False)
         MotePi.configure_channel(3, 16, False)
@@ -90,15 +102,56 @@ class MQTTHandler:
         MotePi.clear()
         MotePi.show()
 
+        self.__queue = q
+        self.__qtimeout = loop_time
+
         self.__command = ""
+        self.__motepifunction = 0
         self.__params = {}
         self.__initial = True  # Is this the first time in this pattern?
         self.__tempvalues = {}  # A dict of values to use between calls to a pattern function
         self.__delay = 0.01  # Default delay
         self.__patternchanged = False
 
-        # self.runmotepi()
+        super(MQTTHandler, self).__init__()
 
+    # An external thread can put a message on a queue for this thread to process
+    def onthread(self, function, *args, **kwargs):
+        self.__queue.put((function, args, kwargs))
+
+    def run(self):
+        while True:
+            try:
+                command, args, kwargs = self.__queue.get(timeout=self.__qtimeout)
+                func = getattr(MQTTHandler, command.lower())
+                self.__command = command.lower()
+                self.__motepifunction = func
+                self.__params = args
+            except queue.Empty:
+                self.idle()
+            except AttributeError:
+                pass
+            except:
+                pass
+
+    def idle(self):
+        sleeptime = 0.5
+        if self.__command != "":
+            try:
+                func(self.__motepifunction)
+                sleeptime = self.__delay
+            except:
+                pass
+
+        MotePi.show()
+        time.sleep(sleeptime)
+
+    # -----------------------------------------------------------------------------------------------------------------------
+    # The Mote patterns are below here
+    # -----------------------------------------------------------------------------------------------------------------------
+
+    # Runs a defined pattern - one of:
+    #
     def runpattern(self, patternset):
         for pattern in patternset:
             matrix = pattern[0]
@@ -112,6 +165,7 @@ class MQTTHandler:
                 drawMatrix(matrix, colour)
             time.sleep(pause)
 
+    # Sets the Mote all to one colour
     def setmatrixtocolour(self, colour, brightness):
         MotePi.set_all(colour[0], colour[1], colour[2], brightness=brightness)
 
@@ -135,6 +189,7 @@ class MQTTHandler:
 
             MotePi.set_pixel(channel + 1, index, r, g, b, brightness=brightness)
 
+    # The Pimoroni 'Bilgetank' pattern
     def bilgetank(self):
         if self.__initial:
             self.__tempvalues = {"phase": 0}
@@ -157,6 +212,7 @@ class MQTTHandler:
 
                 self.__tempvalues["phase"] = self.__tempvalues["phase"] + 1
 
+    # Pulses white in and out
     def pulsewhite(self):
         if self.__initial:
             self.__tempvalues = {}
@@ -171,13 +227,14 @@ class MQTTHandler:
             for pixel in range(16):
                 MotePi.set_pixel(channel, pixel, br, br, br)
 
+    # Pimoroni sample - Pastel colours
     def pastels(self):
         if self.__initial:
             self.__tempvalues = {"offset": 0}
             self.__delay = 0.01
             self.__initial = False
 
-        self.__tempvalues["offset"] += 1
+        self.__tempvalues["offset"] = self.__tempvalues["offset"] + 1
         for channel in range(4):
             for pixel in range(16):
                 hue = self.__tempvalues["offset"] + (10 * (channel * 16) + pixel)
@@ -187,6 +244,7 @@ class MQTTHandler:
                 r, g, b = [int(c * 255) for c in hsv_to_rgb(hue, 1.0, 1.0)]
                 MotePi.set_pixel(channel + 1, pixel, r, g, b)
 
+    # Pimoroni Rainbow sample
     def rainbow(self):
         if self.__initial:
             self.__tempvalues = {}
@@ -200,38 +258,10 @@ class MQTTHandler:
                 r, g, b = [int(c * 255) for c in hsv_to_rgb(hue / 360.0, 1.0, 1.0)]
                 MotePi.set_pixel(channel + 1, pixel, r, g, b)
 
+    # Turns the MotePi off
     def turnoff(self):
-        if "status" in params:
-            if params["status"] == "off":
+        if "status" in self.__params:
+            if self.__params["status"].lower() == "off":
                 MotePi.clear()
                 MotePi.show()
                 check_call(['sudo', 'poweroff'])
-
-    def handlemqtt(self, payload):
-        print("Got command")
-        command = payload["command"]
-        params = payload["params"]
-
-        print(command)
-
-        if command != self.__command:
-            self.__patternchanged = True
-            self.__command = command
-            self.__params = params
-            self.__initial = True
-
-    def runmotepi(self):
-        print("Running")
-        while True:
-            sleeptime = 0.5
-            if self.__command != "":
-                try:
-                    func = getattr(MQTTHandler, self.__command)
-                    func(self)
-                    sleeptime = self.__delay
-                except:
-                    print("Unknown command: %s", self.__command)
-
-            MotePi.show()
-            time.sleep(sleeptime)
-            print("slept")

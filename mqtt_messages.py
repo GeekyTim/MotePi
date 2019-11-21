@@ -4,37 +4,37 @@ import paho.mqtt.client as mqtt
 
 
 class Messages:
-    def __init__(self, config, handlerclass):
-        self.__device = config.mqtt_expecteddevice
-        self.__version = config.mqtt_expectedversion
+    def __init__(self, mqttconfig, handlerclass):
+        self.__device = mqttconfig.mqtt_expecteddevice
+        self.__version = mqttconfig.mqtt_expectedversion
         self.__template = {"mqttmessage": {
             "device": self.__device,
             "version": self.__version,
             "payload": {}}
         }
 
-        self.__listenqueue = config.mqtt_listenqueue
-        self.__qos = config.mqtt_qos
+        self.__listenqueue = mqttconfig.mqtt_listenqueue
+        self.__qos = mqttconfig.mqtt_qos
         self.__handlerclass = handlerclass
 
-        mqttclient = self.startmqtt(config)
+        mqttclient = self.startmqtt(mqttconfig)
 
         mqttclient.loop_forever()
 
     # -----------------------------------------------------------------------------------------------------------------------
     # MQTT Handling callback Functions
     # The callback for when the client receives a CONNACK response from the server.
-    def startmqtt(self, config):
-        client = mqtt.Client(client_id=config.mqtt_localDeviceID, clean_session=True, transport="tcp")
+    def startmqtt(self, mqttconfig):
+        client = mqtt.Client(client_id=mqttconfig.mqtt_localDeviceID, clean_session=True, transport="tcp")
         client.on_connect = self.on_connect
         client.on_message = self.on_message
         client.on_log = self.on_log
-        client.tls_set(config.mqtt_cert, tls_version=2)
+        client.tls_set(mqttconfig.mqtt_cert, tls_version=2)
 
-        client.username_pw_set(username=config.mqtt_localUsername,
-                               password=config.mqtt_localPassword)
-        client.connect(config.mqtt_BrokerIP, config.mqtt_BrokerPort,
-                       keepalive=config.mqtt_BrokerKeepalive)
+        client.username_pw_set(username=mqttconfig.mqtt_localUsername,
+                               password=mqttconfig.mqtt_localPassword)
+        client.connect(mqttconfig.mqtt_BrokerIP, mqttconfig.mqtt_BrokerPort,
+                       keepalive=mqttconfig.mqtt_BrokerKeepalive)
 
         return client
 
@@ -51,7 +51,7 @@ class Messages:
 
         payload = self.getpayload(msg)
         if payload != {}:
-            self.__handlerclass.handlemqtt(payload)
+            self.__handlerclass.onthread(payload['command'], payload['params'])
         else:
             print("Error in Payload")
 
