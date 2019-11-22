@@ -9,7 +9,7 @@ import motephat as MotePi
 
 '''
 {"mqttmessage": {
-            "device": "MotePi",
+            "device": "code",
             "version": 1,
             "payload": {
 				"command": "bilgetank",
@@ -264,7 +264,7 @@ class MQTTHandler(threading.Thread):
                 r, g, b = [int(c * 255) for c in hsv_to_rgb(hue / 360.0, 1.0, 1.0)]
                 MotePi.set_pixel(channel + 1, pixel, r, g, b)
 
-    # Turns the MotePi off
+    # Turns the Pi off
     def turnoff(self):
         if "status" in self.__params:
             if self.__params["status"].lower() == "off":
