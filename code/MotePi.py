@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
+import queue
+
 import motepi_patterns as mqtt_handler
 import mqtt_config_MotePi as mqtt_config
 import mqtt_messages
-import queue
 
 # -----------------------------------------------------------------------------------------------------------------------
 # Initialise the MQTT Handler class
