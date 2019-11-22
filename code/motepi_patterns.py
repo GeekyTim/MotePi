@@ -125,7 +125,10 @@ class MQTTHandler(threading.Thread):
                 func = getattr(MQTTHandler, command.lower())
                 self.__command = command.lower()
                 self.__motepifunction = func
-                self.__params = args
+                print("args", args[0])
+                self.__params = args[0]
+                print("Done args")
+                print(self.__params)
                 self.__initial = True
             except queue.Empty:
                 self.idle()
@@ -263,6 +266,7 @@ class MQTTHandler(threading.Thread):
     # Turns the Pi off
     def turnoff(self):
         if "status" in self.__params:
+            print("It's a turn off")
             if self.__params["status"].lower() == "off":
                 MotePi.clear()
                 MotePi.show()
