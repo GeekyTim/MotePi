@@ -122,31 +122,25 @@ class MQTTHandler(threading.Thread):
         while True:
             try:
                 command, args, kwargs = self.__queue.get(timeout=self.__qtimeout)
-                #func = getattr(MQTTHandler, command.lower())
+                func = getattr(MQTTHandler, command.lower())
                 self.__command = command.lower()
                 self.__motepifunction = func
                 self.__params = args
-                self.__initial = False
+                self.__initial = True
             except queue.Empty:
-                print("Queue Empty")
                 self.idle()
             except AttributeError:
-                print("AttributeError")
                 pass
             except:
-                print("otherexception")
                 pass
 
     def idle(self):
         sleeptime = 0.5
         if self.__command != "":
             try:
-                func = getattr(MQTTHandler, self.__command)
-                print(func)
-                func(self)
+                self.__motepifunction(self)
                 sleeptime = self.__delay
             except:
-                print("Idle Exception")
                 pass
 
         MotePi.show()
@@ -209,11 +203,13 @@ class MQTTHandler(threading.Thread):
         for channel in [1, 2, 3, 4]:
             for pixel in range(MotePi.get_pixel_count(channel)):
                 h = (time.time() * speed) + (self.__tempvalues["phase"] / 10.0)
+
                 h = math.sin(h) * (hue_range / 2)
                 hue = hue_start + (hue_range / 2) + h
                 hue %= 360
 
                 r, g, b = [int(c * 255) for c in hsv_to_rgb(hue / 360.0, 1.0, 1.0)]
+
                 MotePi.set_pixel(channel, pixel, r, g, b)
 
                 self.__tempvalues["phase"] = self.__tempvalues["phase"] + 1

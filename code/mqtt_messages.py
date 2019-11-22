@@ -4,37 +4,40 @@ import paho.mqtt.client as mqtt
 
 
 class Messages:
-    def __init__(self, mqttconfig, handlerclass):
-        self.__device = mqttconfig.mqtt_expecteddevice
-        self.__version = mqttconfig.mqtt_expectedversion
+    def __init__(self, config, handlerclass):
+        self.__device = config.mqttconfig["local"]["device"]
+        self.__version = config.mqttconfig["local"]["version"]
         self.__template = {"mqttmessage": {
             "device": self.__device,
             "version": self.__version,
-            "payload": {}}
+            "payload": {}
+        }
         }
 
-        self.__listenqueue = mqttconfig.mqtt_listenqueue
-        self.__qos = mqttconfig.mqtt_qos
+        self.__listenqueues = config.mqttconfig["queues"]
         self.__handlerclass = handlerclass
 
-        mqttclient = self.startmqtt(mqttconfig)
+        mqttclient = self.startmqtt(config)
 
         mqttclient.loop_forever()
 
     # -----------------------------------------------------------------------------------------------------------------------
     # MQTT Handling callback Functions
     # The callback for when the client receives a CONNACK response from the server.
-    def startmqtt(self, mqttconfig):
-        client = mqtt.Client(client_id=mqttconfig.mqtt_localDeviceID, clean_session=True, transport="tcp")
+    def startmqtt(self, config):
+        client = mqtt.Client(client_id=config.mqttconfig["local"]["deviceid"],
+                             clean_session=True, transport=config.mqttconfig["broker"]["transport"])
+        client.tls_set(config.mqttconfig["broker"]["certfile"], tls_version=config.mqttconfig["broker"]["tlsversion"])
+
+        client.username_pw_set(username=config.mqttconfig["local"]["username"],
+                               password=config.mqttconfig["local"]["password"])
+
         client.on_connect = self.on_connect
         client.on_message = self.on_message
         client.on_log = self.on_log
-        client.tls_set(mqttconfig.mqtt_cert, tls_version=2)
 
-        client.username_pw_set(username=mqttconfig.mqtt_localUsername,
-                               password=mqttconfig.mqtt_localPassword)
-        client.connect(mqttconfig.mqtt_BrokerIP, mqttconfig.mqtt_BrokerPort,
-                       keepalive=mqttconfig.mqtt_BrokerKeepalive)
+        client.connect(host=config.mqttconfig["broker"]["host"], port=config.mqttconfig["broker"]["port"],
+                       keepalive=config.mqttconfig["broker"]["keepalive"])
 
         return client
 
@@ -43,12 +46,11 @@ class Messages:
 
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
-        client.subscribe(topic=self.__listenqueue, qos=self.__qos)
+        for queue in self.__listenqueues:
+            client.subscribe(topic=self.__listenqueues[queue]["name"], qos=self.__listenqueues[queue]["qos"])
 
     # The callback for when a PUBLISH message is received from the server.
     def on_message(self, client, userdata, msg):
-        print("Got a message")
-
         payload = self.getpayload(msg)
         if payload != {}:
             self.__handlerclass.onthread(payload['command'], payload['params'])
@@ -103,17 +105,12 @@ class Messages:
 
     def getpayload(self, mqttmessage):
         message = self.jsontodict(mqttmessage)
-        print(message)
 
         payload = {}
         if self.ismqttmessage(message):
-            print("ismqttmessage")
             if self.isrightdevice(message):
-                print("isrightdevice")
                 if self.isrightversion(message):
-                    print("isrightversion")
                     if self.haspayload(message):
-                        print("haspayload")
                         payload = self.extractpayload(message)
 
         return payload
