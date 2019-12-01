@@ -1,10 +1,11 @@
 import json
 
 import paho.mqtt.client as mqtt
+from dynamicdictionary import dictionary
 
 
 class Messages:
-    def __init__(self, config, handlerclass):
+    def __init__(self, config):
         self.__device = config.mqttconfig["local"]["device"]
         self.__version = config.mqttconfig["local"]["version"]
         self.__template = {"mqttmessage": {
@@ -13,13 +14,14 @@ class Messages:
             "payload": {}
         }
         }
+        self.__payloadtemplate = {"command": "",
+                                  "params": {}}
 
         self.__listenqueues = config.mqttconfig["queues"]
-        self.__handlerclass = handlerclass
+        self.__queuepayloads = self.makequeuedef(self.__listenqueues)
 
-        mqttclient = self.startmqtt(config)
-
-        mqttclient.loop_forever()
+        client = self.startmqtt(config)
+        client.loop_start()
 
     # -----------------------------------------------------------------------------------------------------------------------
     # MQTT Handling callback Functions
@@ -51,9 +53,12 @@ class Messages:
 
     # The callback for when a PUBLISH message is received from the server.
     def on_message(self, client, userdata, msg):
-        payload = self.getpayload(msg)
+        payload = self.getpayloadcontents(msg)
         if payload != {}:
-            self.__handlerclass.onthread(payload['command'], payload['params'])
+            topic = msg.topic
+            for queue in self.__listenqueues:
+                if self.__listenqueues[queue]['name'] == topic:
+                    self.setqueuepayload(queue, payload['command'], payload['params'])
         else:
             print("Error in Payload")
 
@@ -103,9 +108,8 @@ class Messages:
     def extractpayload(self, message):
         return message["mqttmessage"]["payload"]
 
-    def getpayload(self, mqttmessage):
+    def getpayloadcontents(self, mqttmessage):
         message = self.jsontodict(mqttmessage)
-
         payload = {}
         if self.ismqttmessage(message):
             if self.isrightdevice(message):
@@ -114,6 +118,22 @@ class Messages:
                         payload = self.extractpayload(message)
 
         return payload
+
+    def getqueuepayload(self, queuename):
+        try:
+            payload = self.__queuepayloads[queuename[0]]
+        except:
+            payload = {}
+        finally:
+            return payload
+
+    def setqueuepayload(self, queue, command, params):
+        try:
+            self.__queuepayloads[queue]['command'] = command
+            self.__queuepayloads[queue]['params'] = params
+        except:
+            self.__queuepayloads['queues'][queue]['command'] = ""
+            self.__queuepayloads['queues'][queue]['params'] = {}
 
     def generatepayload(self, command, paramdict):
         payload = {"command": command,
@@ -131,3 +151,10 @@ class Messages:
         except:
             message = ""
         return message
+
+    def makequeuedef(self, queuedef):
+        localdic = dictionary()
+        for queue in queuedef:
+            localdic.add(queue, self.__payloadtemplate)
+
+        return localdic

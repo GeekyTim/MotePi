@@ -1,9 +1,8 @@
 import math
-import queue
+import os
 import threading
 import time
 from colorsys import hsv_to_rgb
-from subprocess import check_call
 
 import motephat as MotePi
 
@@ -91,9 +90,10 @@ police = [(all50, [0, 0, 255], 0.5),
           (all50, [255, 0, 0], 0.5)]
 
 
+# Handles the contents of a single queue
 class MQTTHandler(threading.Thread):
 
-    def __init__(self, q, loop_time=1.0 / 60):
+    def __init__(self, mqtthandle, queuename):
         MotePi.configure_channel(1, 16, False)
         MotePi.configure_channel(2, 16, False)
         MotePi.configure_channel(3, 16, False)
@@ -102,40 +102,32 @@ class MQTTHandler(threading.Thread):
         MotePi.clear()
         MotePi.show()
 
-        self.__queue = q
-        self.__qtimeout = loop_time
-
+        self.__mqtthandle = mqtthandle
+        self.__queuename = queuename
         self.__command = ""
-        self.__motepifunction = 0
         self.__params = {}
+        self.__motepifunction = 0
         self.__initial = True  # Is this the first time in this pattern?
         self.__tempvalues = {}  # A dict of values to use between calls to a pattern function
         self.__delay = 0.01  # Default delay
 
         super(MQTTHandler, self).__init__()
 
-    # An external thread can put a message on a queue for this thread to process
-    def onthread(self, function, *args, **kwargs):
-        self.__queue.put((function, args, kwargs))
-
     def run(self):
         while True:
             try:
-                command, args, kwargs = self.__queue.get(timeout=self.__qtimeout)
-                func = getattr(MQTTHandler, command.lower())
-                self.__command = command.lower()
-                self.__motepifunction = func
-                print("args", args[0])
-                self.__params = args[0]
-                print("Done args")
-                print(self.__params)
-                self.__initial = True
-            except queue.Empty:
-                self.idle()
-            except AttributeError:
-                pass
+                newpayload = self.__mqtthandle.getqueuepayload(self.__queuename)
+                if newpayload != {}:
+                    if newpayload["command"].lower() != self.__command:
+                        func = getattr(MQTTHandler, newpayload["command"].lower())
+                        self.__params = newpayload["params"]
+                        self.__command = newpayload["command"].lower()
+                        self.__motepifunction = func
+                        self.__initial = True
             except:
-                pass
+                print("error getting payload")
+            finally:
+                self.idle()
 
     def idle(self):
         sleeptime = 0.5
@@ -264,10 +256,13 @@ class MQTTHandler(threading.Thread):
                 MotePi.set_pixel(channel + 1, pixel, r, g, b)
 
     # Turns the Pi off
-    def turnoff(self):
-        if "status" in self.__params:
-            print("It's a turn off")
-            if self.__params["status"].lower() == "off":
+    def power(self):
+        if "action" in self.__params:
+            if self.__params["action"].lower() == "off":
                 MotePi.clear()
                 MotePi.show()
-                check_call(['sudo', 'poweroff'])
+                os.system('sudo shutdown -h now')
+            elif self.__params["action"].lower() == "reboot":
+                MotePi.clear()
+                MotePi.show()
+                os.system('sudo reboot now')
