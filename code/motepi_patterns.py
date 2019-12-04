@@ -119,13 +119,18 @@ class MQTTHandler(threading.Thread):
                 newpayload = self.__mqtthandle.getqueuepayload(self.__queuename)
                 if newpayload != {}:
                     if newpayload["command"].lower() != self.__command:
+                        MotePi.clear()
+                        self.setmatrixtocolour((0, 0, 0), 100)
+                        MotePi.show()
+
                         func = getattr(MQTTHandler, newpayload["command"].lower())
                         self.__params = newpayload["params"]
                         self.__command = newpayload["command"].lower()
                         self.__motepifunction = func
                         self.__initial = True
+
             except:
-                print("error getting payload")
+                print("Error getting payload")
             finally:
                 self.idle()
 
@@ -152,12 +157,11 @@ class MQTTHandler(threading.Thread):
             matrix = pattern[0]
             colour = pattern[1]
             pause = pattern[2]
-            # print (matrix, colour, pause)
 
             if len(matrix) == 1:
-                setMatrixToColour(colour, matrix[0] / 100.0)
+                self.setmatrixtocolour(colour, matrix[0] / 100.0)
             else:
-                drawMatrix(matrix, colour)
+                self.drawmatrix(matrix, colour)
             time.sleep(pause)
 
     # Sets the Mote all to one colour
@@ -180,9 +184,23 @@ class MQTTHandler(threading.Thread):
             else:
                 r, g, b = 0, 0, 0
 
-            # print(channel, index, r, g, b, brightness)
-
             MotePi.set_pixel(channel + 1, index, r, g, b, brightness=brightness)
+
+    # Police
+    def police(self):
+        if self.__initial:
+            self.__tempvalues = {"colour": "blue", "time": time.time()}
+            self.__delay = 0.05
+            self.__initial = False
+            self.drawmatrix(top_s50, [255, 0, 0])
+
+        if (time.time() - self.__tempvalues["time"]) > 0.5:
+            if self.__tempvalues["colour"] == "blue":
+                self.__tempvalues = {"colour": "red", "time": time.time()}
+                self.drawmatrix(top_s50, [255, 0, 0])
+            else:
+                self.__tempvalues = {"colour": "blue", "time": time.time()}
+                self.drawmatrix(bottom_s50, [0, 0, 255])
 
     # The Pimoroni 'Bilgetank' pattern
     def bilgetank(self):
