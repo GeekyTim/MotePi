@@ -16,85 +16,85 @@ import motephat as MotePi
         }
 '''
 
-top_s50 = [50, 50, 50, 50,
-           50, 50, 50, 50,
-           50, 50, 50, 50,
-           50, 50, 50, 50,
-           50, 50, 50, 50,
-           50, 50, 50, 50,
-           50, 50, 50, 50,
-           50, 50, 50, 50,
-           0, 0, 0, 0,
-           0, 0, 0, 0,
-           0, 0, 0, 0,
-           0, 0, 0, 0,
-           0, 0, 0, 0,
-           0, 0, 0, 0,
-           0, 0, 0, 0,
-           0, 0, 0, 0]
-
-bottom_s50 = [0, 0, 0, 0,
-              0, 0, 0, 0,
-              0, 0, 0, 0,
-              0, 0, 0, 0,
-              0, 0, 0, 0,
-              0, 0, 0, 0,
-              0, 0, 0, 0,
-              0, 0, 0, 0,
-              50, 50, 50, 50,
-              50, 50, 50, 50,
-              50, 50, 50, 50,
-              50, 50, 50, 50,
-              50, 50, 50, 50,
-              50, 50, 50, 50,
-              50, 50, 50, 50,
-              50, 50, 50, 50]
-
-h2s50 = [50, 50, 50, 50,
-         0, 0, 0, 0,
-         50, 50, 50, 50,
-         0, 0, 0, 0,
-         50, 50, 50, 50,
-         0, 0, 0, 0,
-         50, 50, 50, 50,
-         0, 0, 0, 0,
-         50, 50, 50, 50,
-         0, 0, 0, 0,
-         50, 50, 50, 50,
-         0, 0, 0, 0,
-         50, 50, 50, 50,
-         0, 0, 0, 0,
-         50, 50, 50, 50,
-         0, 0, 0, 0]
-
-h1s50 = [0, 0, 0, 0,
-         50, 50, 50, 50,
-         0, 0, 0, 0,
-         50, 50, 50, 50,
-         0, 0, 0, 0,
-         50, 50, 50, 50,
-         0, 0, 0, 0,
-         50, 50, 50, 50,
-         0, 0, 0, 0,
-         50, 50, 50, 50,
-         0, 0, 0, 0,
-         50, 50, 50, 50,
-         0, 0, 0, 0,
-         50, 50, 50, 50,
-         0, 0, 0, 0,
-         50, 50, 50, 50]
-
-all50 = [50]
-
-police = [(all50, [0, 0, 255], 0.5),
-          (all50, [255, 0, 0], 0.5)]
-
 
 # Handles the contents of a single queue
 class MotePiPatterns(threading.Thread):
+    ''' Draw the patterns on the Mote strips '''
+    __top_s50 = [50, 50, 50, 50,
+                 50, 50, 50, 50,
+                 50, 50, 50, 50,
+                 50, 50, 50, 50,
+                 50, 50, 50, 50,
+                 50, 50, 50, 50,
+                 50, 50, 50, 50,
+                 50, 50, 50, 50,
+                 0, 0, 0, 0,
+                 0, 0, 0, 0,
+                 0, 0, 0, 0,
+                 0, 0, 0, 0,
+                 0, 0, 0, 0,
+                 0, 0, 0, 0,
+                 0, 0, 0, 0,
+                 0, 0, 0, 0]
+
+    __bottom_s50 = [0, 0, 0, 0,
+                    0, 0, 0, 0,
+                    0, 0, 0, 0,
+                    0, 0, 0, 0,
+                    0, 0, 0, 0,
+                    0, 0, 0, 0,
+                    0, 0, 0, 0,
+                    0, 0, 0, 0,
+                    50, 50, 50, 50,
+                    50, 50, 50, 50,
+                    50, 50, 50, 50,
+                    50, 50, 50, 50,
+                    50, 50, 50, 50,
+                    50, 50, 50, 50,
+                    50, 50, 50, 50,
+                    50, 50, 50, 50]
+
+    __h2s50 = [50, 50, 50, 50,
+               0, 0, 0, 0,
+               50, 50, 50, 50,
+               0, 0, 0, 0,
+               50, 50, 50, 50,
+               0, 0, 0, 0,
+               50, 50, 50, 50,
+               0, 0, 0, 0,
+               50, 50, 50, 50,
+               0, 0, 0, 0,
+               50, 50, 50, 50,
+               0, 0, 0, 0,
+               50, 50, 50, 50,
+               0, 0, 0, 0,
+               50, 50, 50, 50,
+               0, 0, 0, 0]
+
+    __h1s50 = [0, 0, 0, 0,
+               50, 50, 50, 50,
+               0, 0, 0, 0,
+               50, 50, 50, 50,
+               0, 0, 0, 0,
+               50, 50, 50, 50,
+               0, 0, 0, 0,
+               50, 50, 50, 50,
+               0, 0, 0, 0,
+               50, 50, 50, 50,
+               0, 0, 0, 0,
+               50, 50, 50, 50,
+               0, 0, 0, 0,
+               50, 50, 50, 50,
+               0, 0, 0, 0,
+               50, 50, 50, 50]
+
+    all50 = [50]
+
+    __police = [(all50, [0, 0, 255], 0.5),
+                (all50, [255, 0, 0], 0.5)]
 
     def __init__(self, mqtthandle, queuename):
-	''' Initialise the MQTTHandler - the class that controls the Mote lights '''
+        ''' Initialise the Mote '''
         MotePi.configure_channel(1, 16, False)
         MotePi.configure_channel(2, 16, False)
         MotePi.configure_channel(3, 16, False)
@@ -112,26 +112,22 @@ class MotePiPatterns(threading.Thread):
         self.__tempvalues = {}  # A dict of values to use between calls to a pattern function
         self.__delay = 0.01  # Default delay
 
-        super(MQTTHandler, self).__init__()
+        super(MotePiPatterns, self).__init__()
 
     def run(self):
+        ''' Loop around, fetching the contents of the MQTT messages '''
         while True:
             try:
                 newpayload = self.__mqtthandle.getqueuepayload(self.__queuename)
                 if newpayload != {}:
                     if newpayload["command"].lower() != self.__command:
-                        MotePi.clear()
-                        self.setmatrixtocolour((0, 0, 0), 100)
-                        MotePi.show()
-
-                        func = getattr(MQTTHandler, newpayload["command"].lower())
+                        func = getattr(MotePiPatterns, "__" + newpayload["command"].lower())
                         self.__params = newpayload["params"]
                         self.__command = newpayload["command"].lower()
                         self.__motepifunction = func
                         self.__initial = True
-
             except:
-                print("Error getting payload")
+                print("error getting payload")
             finally:
                 self.idle()
 
@@ -153,25 +149,26 @@ class MotePiPatterns(threading.Thread):
 
     # Runs a defined pattern - one of:
     #
-    def runpattern(self, patternset):
+    def __runpattern(self, patternset):
         for pattern in patternset:
             matrix = pattern[0]
             colour = pattern[1]
             pause = pattern[2]
+            # print (matrix, colour, pause)
 
             if len(matrix) == 1:
-                self.setmatrixtocolour(colour, matrix[0] / 100.0)
+                setMatrixToColour(colour, matrix[0] / 100.0)
             else:
-                self.drawmatrix(matrix, colour)
+                drawMatrix(matrix, colour)
             time.sleep(pause)
 
     # Sets the Mote all to one colour
-    def setmatrixtocolour(self, colour, brightness):
+    def __setmatrixtocolour(self, colour, brightness):
         MotePi.set_all(colour[0], colour[1], colour[2], brightness=brightness)
 
     # Draws the matrix pattern on the Mote with the matrix setting the brightness of each
     # pixel and colour setting the colour
-    def drawmatrix(self, matrix, colour):
+    def __drawmatrix(self, matrix, colour):
         count = len(matrix)
         red, green, blue = colour[0], colour[1], colour[2]
         for matrixelement in range(0, count):
@@ -185,10 +182,12 @@ class MotePiPatterns(threading.Thread):
             else:
                 r, g, b = 0, 0, 0
 
+            # print(channel, index, r, g, b, brightness)
+
             MotePi.set_pixel(channel + 1, index, r, g, b, brightness=brightness)
 
     # Police
-    def police(self):
+    def __police(self):
         if self.__initial:
             self.__tempvalues = {"colour": "blue", "time": time.time()}
             self.__delay = 0.05
@@ -203,7 +202,7 @@ class MotePiPatterns(threading.Thread):
                 self.__tempvalues = {"colour": "blue", "time": time.time()}
                 self.drawmatrix(bottom_s50, [0, 0, 255])
 
-    def matrix(self):
+    def __matrix(self):
         if self.__initial:
             self.__tempvalues = {"start": [5, 0, 12, 3],
                                  "length": [5, 8, 4, 5]}
@@ -228,7 +227,7 @@ class MotePiPatterns(threading.Thread):
                 # self.__tempvalues["start"][channel] = (self.__tempvalues["start"][channel] + 1) % 16
 
     # The Pimoroni 'Bilgetank' pattern
-    def bilgetank(self):
+    def __bilgetank(self):
         if self.__initial:
             self.__tempvalues = {"phase": 0}
             self.__delay = 0.01
@@ -253,7 +252,7 @@ class MotePiPatterns(threading.Thread):
                 self.__tempvalues["phase"] = self.__tempvalues["phase"] + 1
 
     # Pulses white in and out
-    def pulsewhite(self):
+    def __pulsewhite(self):
         if self.__initial:
             self.__tempvalues = {}
             self.__delay = 0.01
@@ -263,19 +262,19 @@ class MotePiPatterns(threading.Thread):
         br *= 255.0
         br = int(br)
 
-        for channel in [1, 2, 3, 4]:
-            for pixel in range(MotePi.get_pixel_count(channel)):
+        for channel in range(1, 5):
+            for pixel in range(16):
                 MotePi.set_pixel(channel, pixel, br, br, br)
 
     # Pimoroni sample - Pastel colours
-    def pastels(self):
+    def __pastels(self):
         if self.__initial:
             self.__tempvalues = {"offset": 0}
             self.__delay = 0.01
             self.__initial = False
 
         self.__tempvalues["offset"] = self.__tempvalues["offset"] + 1
-        for channel in [1, 2, 3, 4]:
+        for channel in range(4):
             for pixel in range(16):
                 hue = self.__tempvalues["offset"] + (10 * (channel * 16) + pixel)
                 hue %= 360
@@ -285,7 +284,7 @@ class MotePiPatterns(threading.Thread):
                 MotePi.set_pixel(channel + 1, pixel, r, g, b)
 
     # Pimoroni Rainbow sample
-    def rainbow(self):
+    def __rainbow(self):
         if self.__initial:
             self.__tempvalues = {}
             self.__delay = 0.01
@@ -299,7 +298,7 @@ class MotePiPatterns(threading.Thread):
                 MotePi.set_pixel(channel + 1, pixel, r, g, b)
 
     # Turns the Pi off
-    def power(self):
+    def __power(self):
         if "action" in self.__params:
             if self.__params["action"].lower() == "off":
                 MotePi.clear()
