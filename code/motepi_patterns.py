@@ -8,7 +8,7 @@ import motephat as MotePi
 
 '''
 {"mqttmessage": {
-            "device": "code",
+            "device": "MotePi",
             "version": 1,
             "payload": {
 				"command": "bilgetank",
@@ -91,9 +91,10 @@ police = [(all50, [0, 0, 255], 0.5),
 
 
 # Handles the contents of a single queue
-class MQTTHandler(threading.Thread):
+class MotePiPatterns(threading.Thread):
 
     def __init__(self, mqtthandle, queuename):
+	''' Initialise the MQTTHandler - the class that controls the Mote lights '''
         MotePi.configure_channel(1, 16, False)
         MotePi.configure_channel(2, 16, False)
         MotePi.configure_channel(3, 16, False)
@@ -202,6 +203,30 @@ class MQTTHandler(threading.Thread):
                 self.__tempvalues = {"colour": "blue", "time": time.time()}
                 self.drawmatrix(bottom_s50, [0, 0, 255])
 
+    def matrix(self):
+        if self.__initial:
+            self.__tempvalues = {"start": [5, 0, 12, 3],
+                                 "length": [5, 8, 4, 5]}
+            self.__delay = 0.01
+            self.__initial = False
+
+        for channel in range(4):
+            for pixel in range(16):
+
+                brightness = 0.1+0.9*pixel/15.0
+                print(channel, pixel, brightness)
+                MotePi.set_pixel(channel, pixel, 0, 255, 0, brightness)
+
+                # if pixel <= self.__tempvalues["start"][channel]:
+                #     brightness = 0
+                # else:
+                #     brightness = ((pixel + self.__tempvalues["start"][channel]) % 16) * 255 / self.__tempvalues["length"][
+                #         channel]/1000.0
+                #
+                # print("Green", channel, pixel, brightness)
+                # MotePi.set_pixel(channel, pixel, 0, 255, 0, brightness)
+                # self.__tempvalues["start"][channel] = (self.__tempvalues["start"][channel] + 1) % 16
+
     # The Pimoroni 'Bilgetank' pattern
     def bilgetank(self):
         if self.__initial:
@@ -238,8 +263,8 @@ class MQTTHandler(threading.Thread):
         br *= 255.0
         br = int(br)
 
-        for channel in range(1, 5):
-            for pixel in range(16):
+        for channel in [1, 2, 3, 4]:
+            for pixel in range(MotePi.get_pixel_count(channel)):
                 MotePi.set_pixel(channel, pixel, br, br, br)
 
     # Pimoroni sample - Pastel colours
@@ -250,7 +275,7 @@ class MQTTHandler(threading.Thread):
             self.__initial = False
 
         self.__tempvalues["offset"] = self.__tempvalues["offset"] + 1
-        for channel in range(4):
+        for channel in [1, 2, 3, 4]:
             for pixel in range(16):
                 hue = self.__tempvalues["offset"] + (10 * (channel * 16) + pixel)
                 hue %= 360

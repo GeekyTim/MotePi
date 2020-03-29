@@ -121,7 +121,7 @@ class Messages:
 
     def getqueuepayload(self, queuename):
         try:
-            payload = self.__queuepayloads[queuename[0]]
+            payload = self.__queuepayloads[queuename]
         except:
             payload = {}
         finally:

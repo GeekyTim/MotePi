@@ -8,8 +8,8 @@ import mqtt_messages
 
 mqtthandle = mqtt_messages.Messages(mqtt_config)
 
-handlerclass = mqtt_handler.MQTTHandler(mqtthandle, ["MoteControl"])
+handlerclass = mqtt_handler.MotePiPatterns(mqtthandle, "MoteControl")
 handlerclass.start()
 
-# mqtthandle.loop_forever()
+#mqtthandle.setqueuepayload("MoteControl", "BilgeTank", "{}")
 pause()
