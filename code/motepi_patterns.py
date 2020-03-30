@@ -1,10 +1,10 @@
 import math
+import motephat as MotePi
 import os
+import sys
 import threading
 import time
 from colorsys import hsv_to_rgb
-
-import motephat as MotePi
 
 '''
 {"mqttmessage": {
@@ -121,10 +121,9 @@ class MotePiPatterns(threading.Thread):
                 newpayload = self.__mqtthandle.getqueuepayload(self.__queuename)
                 if newpayload != {}:
                     if newpayload["command"].lower() != self.__command:
-                        func = getattr(MotePiPatterns, "__" + newpayload["command"].lower())
-                        self.__params = newpayload["params"]
                         self.__command = newpayload["command"].lower()
-                        self.__motepifunction = func
+                        self.__params = newpayload["params"]
+                        self.__motepifunction = getattr(self, self.__command)
                         self.__initial = True
             except:
                 print("error getting payload")
@@ -135,13 +134,14 @@ class MotePiPatterns(threading.Thread):
         sleeptime = 0.5
         if self.__command != "":
             try:
-                self.__motepifunction(self)
+                self.__motepifunction()
                 sleeptime = self.__delay
             except:
                 pass
 
-        MotePi.show()
-        time.sleep(sleeptime)
+            MotePi.show()
+            time.sleep(sleeptime)
+
 
     # -----------------------------------------------------------------------------------------------------------------------
     # The Mote patterns are below here
@@ -187,7 +187,7 @@ class MotePiPatterns(threading.Thread):
             MotePi.set_pixel(channel + 1, index, r, g, b, brightness=brightness)
 
     # Police
-    def __police(self):
+    def police(self):
         if self.__initial:
             self.__tempvalues = {"colour": "blue", "time": time.time()}
             self.__delay = 0.05
@@ -202,7 +202,7 @@ class MotePiPatterns(threading.Thread):
                 self.__tempvalues = {"colour": "blue", "time": time.time()}
                 self.drawmatrix(bottom_s50, [0, 0, 255])
 
-    def __matrix(self):
+    def matrix(self):
         if self.__initial:
             self.__tempvalues = {"start": [5, 0, 12, 3],
                                  "length": [5, 8, 4, 5]}
@@ -211,8 +211,7 @@ class MotePiPatterns(threading.Thread):
 
         for channel in range(4):
             for pixel in range(16):
-
-                brightness = 0.1+0.9*pixel/15.0
+                brightness = 0.1 + 0.9 * pixel / 15.0
                 print(channel, pixel, brightness)
                 MotePi.set_pixel(channel, pixel, 0, 255, 0, brightness)
 
@@ -227,7 +226,7 @@ class MotePiPatterns(threading.Thread):
                 # self.__tempvalues["start"][channel] = (self.__tempvalues["start"][channel] + 1) % 16
 
     # The Pimoroni 'Bilgetank' pattern
-    def __bilgetank(self):
+    def bilgetank(self):
         if self.__initial:
             self.__tempvalues = {"phase": 0}
             self.__delay = 0.01
@@ -252,7 +251,7 @@ class MotePiPatterns(threading.Thread):
                 self.__tempvalues["phase"] = self.__tempvalues["phase"] + 1
 
     # Pulses white in and out
-    def __pulsewhite(self):
+    def pulsewhite(self):
         if self.__initial:
             self.__tempvalues = {}
             self.__delay = 0.01
@@ -267,7 +266,7 @@ class MotePiPatterns(threading.Thread):
                 MotePi.set_pixel(channel, pixel, br, br, br)
 
     # Pimoroni sample - Pastel colours
-    def __pastels(self):
+    def pastels(self):
         if self.__initial:
             self.__tempvalues = {"offset": 0}
             self.__delay = 0.01
@@ -284,7 +283,7 @@ class MotePiPatterns(threading.Thread):
                 MotePi.set_pixel(channel + 1, pixel, r, g, b)
 
     # Pimoroni Rainbow sample
-    def __rainbow(self):
+    def rainbow(self):
         if self.__initial:
             self.__tempvalues = {}
             self.__delay = 0.01
@@ -298,7 +297,7 @@ class MotePiPatterns(threading.Thread):
                 MotePi.set_pixel(channel + 1, pixel, r, g, b)
 
     # Turns the Pi off
-    def __power(self):
+    def power(self):
         if "action" in self.__params:
             if self.__params["action"].lower() == "off":
                 MotePi.clear()

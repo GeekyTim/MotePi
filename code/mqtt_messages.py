@@ -56,6 +56,7 @@ class Messages:
         payload = self.getpayloadcontents(msg)
         if payload != {}:
             topic = msg.topic
+
             for queue in self.__listenqueues:
                 if self.__listenqueues[queue]['name'] == topic:
                     self.setqueuepayload(queue, payload['command'], payload['params'])
