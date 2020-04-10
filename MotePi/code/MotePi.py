@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
+from signal import pause
+
 import motepi_patterns as mqtt_handler
 import mqtt_config
 import mqtt_messages
-from signal import pause
 
 
 def main():

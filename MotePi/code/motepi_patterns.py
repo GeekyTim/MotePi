@@ -1,10 +1,10 @@
 import math
-import motephat as MotePi
 import os
-import sys
 import threading
 import time
 from colorsys import hsv_to_rgb
+
+import motephat as MotePi
 
 '''
 {"mqttmessage": {
@@ -141,7 +141,6 @@ class MotePiPatterns(threading.Thread):
 
             MotePi.show()
             time.sleep(sleeptime)
-
 
     # -----------------------------------------------------------------------------------------------------------------------
     # The Mote patterns are below here
