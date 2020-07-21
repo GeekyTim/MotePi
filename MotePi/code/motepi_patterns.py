@@ -2,9 +2,9 @@ import math
 import os
 import threading
 import time
-from colorsys import hsv_to_rgb
 
 import motephat as MotePi
+from colorsys import hsv_to_rgb
 
 '''
 {"mqttmessage": {
@@ -117,21 +117,16 @@ class MotePiPatterns(threading.Thread):
             try:
                 self.redirection()
             except:
-                print("Error getting payload")
+                print("Error in the animation")
             finally:
                 self.idle()
 
     def idle(self):
         sleeptime = 0.5
         if self.__command != "":
-            try:
-                self.redirection()
-                sleeptime = self.__delay
-            except:
-                pass
-
+            sleeptime = self.__delay
             MotePi.show()
-            time.sleep(sleeptime)
+        time.sleep(sleeptime)
 
     def messagehandler(self, command, params):
         """ MQTT will call this method to handle the message """
@@ -174,7 +169,6 @@ class MotePiPatterns(threading.Thread):
             matrix = pattern[0]
             colour = pattern[1]
             pause = pattern[2]
-            # print (matrix, colour, pause)
 
             if len(matrix) == 1:
                 self.__setmatrixtocolour(colour, matrix[0] / 100.0)
@@ -205,9 +199,9 @@ class MotePiPatterns(threading.Thread):
             MotePi.set_pixel(channel + 1, index, r, g, b, brightness=brightness)
 
     def __setbrighness(selfself, brightness):
-        for channel in range(4):
+        for channel in [1, 2, 3, 4]:
             for pixel in range(16):
-                MotePi.set_pixel(channel + 1, pixel, 0, 0, 0, brightness=brightness)
+                MotePi.set_pixel(channel, pixel, 0, 0, 0, brightness=brightness)
         MotePi.show()
 
     # Police
@@ -230,32 +224,26 @@ class MotePiPatterns(threading.Thread):
     def __matrix(self):
         if self.__initial:
             self.__clearall()
-            self.__tempvalues = {"start": [5, 0, 12, 3],
-                                 "length": [5, 8, 4, 5]}
-            self.__delay = 1.0
+            self.__tempvalues = {"start": [5, 0, 4, 13], "length": [5, 9, 3, 5]}
+            self.__delay = 0.2
             self.__initial = False
 
-        for channel in range(4):
+        for channel in [1, 2, 3, 4]:
             for pixel in range(16):
-                brightness = 0.1 + 0.9 * pixel / 15.0
-                print(channel, pixel, brightness)
-                MotePi.set_pixel(channel, pixel, 0, 255, 0, brightness)
-
-                if pixel <= self.__tempvalues["start"][channel]:
-                    brightness = 0
+                green = 0.1 + 0.9 * (
+                        (pixel - self.__tempvalues["start"][channel - 1]) / (
+                            self.__tempvalues["length"][channel - 1] - 1))
+                if 0 > green or green > 1:
+                    green = 0
                 else:
-                    brightness = ((pixel + self.__tempvalues["start"][channel]) % 16) * 255 / \
-                                 self.__tempvalues["length"][
-                                     channel] / 1000.0
+                    green = 255 * (1.0 - green)
 
-                MotePi.set_pixel(channel, pixel, 0, 255 * brightness, 0, 1.0)
-                self.__tempvalues["start"][channel] = (self.__tempvalues["start"][channel] + 1) % 16
+                MotePi.set_pixel(channel, pixel, 0, green, 0, brightness=0.2)
+            self.__tempvalues["start"][channel - 1] = (self.__tempvalues["start"][channel - 1] - 1) % 16
 
     # The Pimoroni 'Bilgetank' pattern
     def __bilgetank(self):
-        print("In Bilgetank")
         if self.__initial:
-            print("initial")
             self.__clearall()
             self.__tempvalues = {"phase": 0}
             self.__delay = 0.01
@@ -267,7 +255,6 @@ class MotePiPatterns(threading.Thread):
 
         for channel in [1, 2, 3, 4]:
             for pixel in range(MotePi.get_pixel_count(channel)):
-                print("in the loop", pixel)
                 h = (time.time() * speed) + (self.__tempvalues["phase"] / 10.0)
 
                 h = math.sin(h) * (hue_range / 2)
@@ -296,10 +283,9 @@ class MotePiPatterns(threading.Thread):
             self.__tempvalues["difference"] = -self.__tempvalues["difference"]
             br = br + self.__tempvalues["difference"]
 
-        print(br)
-        for channel in range(4):
+        for channel in [1, 2, 3, 4]:
             for pixel in range(16):
-                MotePi.set_pixel(channel + 1, pixel, br, br, br, 1.0)
+                MotePi.set_pixel(channel, pixel, br, br, br, 1.0)
 
         self.__tempvalues = {"shade": br, "difference": self.__tempvalues["difference"]}
 
@@ -313,14 +299,14 @@ class MotePiPatterns(threading.Thread):
 
         self.__tempvalues["offset"] = self.__tempvalues["offset"] + 1
 
-        for channel in range(4):
+        for channel in [1, 2, 3, 4]:
             for pixel in range(16):
-                hue = self.__tempvalues["offset"] + (10 * (channel * 16) + pixel)
+                hue = self.__tempvalues["offset"] + (10 * ((channel - 1) * 16) + pixel)
                 hue %= 360
                 hue /= 360.0
 
                 r, g, b = [int(c * 255) for c in hsv_to_rgb(hue, 1.0, 1.0)]
-                MotePi.set_pixel(channel + 1, pixel, r, g, b, 1.0)
+                MotePi.set_pixel(channel, pixel, r, g, b, 1.0)
 
     # Pimoroni Rainbow sample
     def __rainbow(self):
@@ -331,11 +317,11 @@ class MotePiPatterns(threading.Thread):
             self.__initial = False
 
         h = time.time() * 50
-        for channel in range(4):
+        for channel in [1, 2, 3, 4]:
             for pixel in range(16):
-                hue = (h + (channel * 64) + (pixel * 4)) % 360
+                hue = (h + ((channel - 1) * 64) + (pixel * 4)) % 360
                 r, g, b = [int(c * 255) for c in hsv_to_rgb(hue / 360.0, 1.0, 1.0)]
-                MotePi.set_pixel(channel + 1, pixel, r, g, b, 1.0)
+                MotePi.set_pixel(channel, pixel, r, g, b, 1.0)
 
     # Turns the Pi off
     def __power(self, params):
