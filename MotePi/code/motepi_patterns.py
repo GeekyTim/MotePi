@@ -19,7 +19,7 @@ import motephat as MotePi
 
 # Handles the contents of a single queue
 class MotePiPatterns(threading.Thread):
-    ''' Draw the patterns on the Mote strips '''
+    """ Draw the patterns on the Mote strips """
     __top_s50 = [50, 50, 50, 50,
                  50, 50, 50, 50,
                  50, 50, 50, 50,
@@ -93,8 +93,8 @@ class MotePiPatterns(threading.Thread):
     __police = [(all50, [0, 0, 255], 0.5),
                 (all50, [255, 0, 0], 0.5)]
 
-    def __init__(self, mqtthandle, queuename):
-        ''' Initialise the Mote '''
+    def __init__(self):
+        """ Initialise the Mote """
         MotePi.configure_channel(1, 16, False)
         MotePi.configure_channel(2, 16, False)
         MotePi.configure_channel(3, 16, False)
@@ -102,11 +102,9 @@ class MotePiPatterns(threading.Thread):
         MotePi.set_clear_on_exit(True)
         self.__clearall()
 
-        self.__mqtthandle = mqtthandle
-        self.__queuename = queuename
-        self.__command = ""
+        self.__command = "nothing"
         self.__params = {}
-        self.__motepifunction = 0
+        self.__lastcommand = "nothing"
         self.__initial = True  # Is this the first time in this pattern?
         self.__tempvalues = {}  # A dict of values to use between calls to a pattern function
         self.__delay = 0.01  # Default delay
@@ -117,15 +115,9 @@ class MotePiPatterns(threading.Thread):
         ''' Loop around, fetching the contents of the MQTT messages '''
         while True:
             try:
-                newpayload = self.__mqtthandle.getqueuepayload(self.__queuename)
-                if newpayload != {}:
-                    if newpayload["command"].lower() != self.__command:
-                        self.__command = newpayload["command"].lower()
-                        self.__params = newpayload["params"]
-                        self.__motepifunction = getattr(self, self.__command)
-                        self.__initial = True
+                self.redirection()
             except:
-                print("error getting payload")
+                print("Error getting payload")
             finally:
                 self.idle()
 
@@ -133,7 +125,7 @@ class MotePiPatterns(threading.Thread):
         sleeptime = 0.5
         if self.__command != "":
             try:
-                self.__motepifunction()
+                self.redirection()
                 sleeptime = self.__delay
             except:
                 pass
@@ -141,12 +133,35 @@ class MotePiPatterns(threading.Thread):
             MotePi.show()
             time.sleep(sleeptime)
 
+    def messagehandler(self, command, params):
+        """ MQTT will call this method to handle the message """
+        command = command.lower()
+
+        if command != self.__lastcommand:
+            self.__initial = True
+            self.__command = command
+            self.__params = params
+
+    def redirection(self):
+        if self.__command != "":
+            if self.__command == "police":
+                self.__police()
+            elif self.__command == "bilgetank":
+                self.__bilgetank()
+            elif self.__command == "matrix":
+                self.__matrix()
+            elif self.__command == "pastels":
+                self.__pastels()
+            elif self.__command == "pulsewhite":
+                self.__pulsewhite()
+            elif self.__command == "rainbow":
+                self.__rainbow()
+            elif self.__command == "power":
+                self.__power(self.__params)
+
     # -----------------------------------------------------------------------------------------------------------------------
     # The Mote patterns are below here
     # -----------------------------------------------------------------------------------------------------------------------
-
-    # Runs a defined pattern - one of:
-    #
 
     def __clearall(self):
         # MotePi.set_all(0, 0, 0)
@@ -196,7 +211,7 @@ class MotePiPatterns(threading.Thread):
         MotePi.show()
 
     # Police
-    def police(self):
+    def __police(self):
         if self.__initial:
             self.__clearall()
             self.__tempvalues = {"colour": "blue", "time": time.time()}
@@ -212,7 +227,7 @@ class MotePiPatterns(threading.Thread):
                 self.__tempvalues = {"colour": "blue", "time": time.time()}
                 self.__drawmatrix(self.__bottom_s50, [0, 0, 255])
 
-    def matrix(self):
+    def __matrix(self):
         if self.__initial:
             self.__clearall()
             self.__tempvalues = {"start": [5, 0, 12, 3],
@@ -237,8 +252,10 @@ class MotePiPatterns(threading.Thread):
                 self.__tempvalues["start"][channel] = (self.__tempvalues["start"][channel] + 1) % 16
 
     # The Pimoroni 'Bilgetank' pattern
-    def bilgetank(self):
+    def __bilgetank(self):
+        print("In Bilgetank")
         if self.__initial:
+            print("initial")
             self.__clearall()
             self.__tempvalues = {"phase": 0}
             self.__delay = 0.01
@@ -250,6 +267,7 @@ class MotePiPatterns(threading.Thread):
 
         for channel in [1, 2, 3, 4]:
             for pixel in range(MotePi.get_pixel_count(channel)):
+                print("in the loop", pixel)
                 h = (time.time() * speed) + (self.__tempvalues["phase"] / 10.0)
 
                 h = math.sin(h) * (hue_range / 2)
@@ -263,7 +281,7 @@ class MotePiPatterns(threading.Thread):
                 self.__tempvalues["phase"] = self.__tempvalues["phase"] + 1
 
     # Pulses white in and out
-    def pulsewhite(self):
+    def __pulsewhite(self):
         if self.__initial:
             self.__clearall()
             self.__tempvalues = {"shade": 0, "difference": 5}
@@ -286,7 +304,7 @@ class MotePiPatterns(threading.Thread):
         self.__tempvalues = {"shade": br, "difference": self.__tempvalues["difference"]}
 
     # Pimoroni sample - Pastel colours
-    def pastels(self):
+    def __pastels(self):
         if self.__initial:
             self.__clearall()
             self.__tempvalues = {"offset": 0}
@@ -305,7 +323,7 @@ class MotePiPatterns(threading.Thread):
                 MotePi.set_pixel(channel + 1, pixel, r, g, b, 1.0)
 
     # Pimoroni Rainbow sample
-    def rainbow(self):
+    def __rainbow(self):
         if self.__initial:
             self.__clearall()
             self.__tempvalues = {}
@@ -320,10 +338,10 @@ class MotePiPatterns(threading.Thread):
                 MotePi.set_pixel(channel + 1, pixel, r, g, b, 1.0)
 
     # Turns the Pi off
-    def power(self):
-        if "action" in self.__params:
+    def __power(self, params):
+        if "action" in params:
             self.__clearall()
-            if self.__params["action"].lower() == "off":
+            if params["action"].lower() == "off":
                 os.system('sudo shutdown -h now')
-            elif self.__params["action"].lower() == "reboot":
+            elif params["action"].lower() == "reboot":
                 os.system('sudo reboot now')

@@ -2,19 +2,19 @@
 
 from signal import pause
 
-import motepi_patterns as mqtt_handler
-import mqtt_config
 import mqtt_messages
+import motepi_patterns as mqtt_handler
 
 
 def main():
-    mqtthandle = mqtt_messages.Messages(mqtt_config)
+    # Set up the handler class
+    handlerclass = mqtt_handler.MotePiPatterns()
+    # Start MQTT Listener
+    mqtt_messages.Messages(handlerclass)
 
-    handlerclass = mqtt_handler.MotePiPatterns(mqtthandle, "MoteControl")
     handlerclass.start()
 
     pause()
-
 
 if __name__ == "__main__":
     main()
