@@ -14,6 +14,5 @@ mqttconfig = {"broker": {"host": "WDDrivePi.localdomain",
                         "version": 1},
               "queues": {"MoteControl": {"name": "MotePi/command",
                                          "qos": 2}
-
-                         }
+                        }
               }

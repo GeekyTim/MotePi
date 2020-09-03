@@ -6,15 +6,17 @@ import time
 import motephat as MotePi
 from colorsys import hsv_to_rgb
 
-'''
+"""
 {"mqttmessage": {
             "device": "MotePi",
             "version": 1,
             "payload": {
-				"command": "bilgetank",
-				"params": {"test":"test"}}}
+                "command": "bilgetank",
+                "params": {"test":"test"}
+            }
         }
-'''
+    }
+"""
 
 
 # Handles the contents of a single queue
@@ -327,6 +329,7 @@ class MotePiPatterns(threading.Thread):
     def __power(self, params):
         if "action" in params:
             self.__clearall()
+            time.sleep(1)
             if params["action"].lower() == "off":
                 os.system('sudo shutdown -h now')
             elif params["action"].lower() == "reboot":

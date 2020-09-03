@@ -4,23 +4,23 @@ import mqtt_config as config
 import paho.mqtt.client as mqtt
 from dynamicdictionary import dictionary
 
-''' The expected format of the messages that this code will handle is the following JSON: 
+""" The expected format of the messages that this code will handle is the following JSON: 
     {"mqttmessage": {
             "device": "thisdevice",
             "version": 1,
             "payload": {
-				"command": "acommand",
-				"params": {"param1":"value1"}
-			}
-		}
+                "command": "acommand",
+                "params": {"param1":"value1"}
+            }
+        }
     }
-'''
+"""
 
 
 class Messages:
     def __init__(self, handlerclass):
-        self.__device = config.mqttconfig["local"]["device"] # This device
-        self.__version = config.mqttconfig["local"]["version"] # The GeekyTim MQTT version
+        self.__device = config.mqttconfig["local"]["device"]  # This device
+        self.__version = config.mqttconfig["local"]["version"]  # The GeekyTim MQTT version
         self.__transport = config.mqttconfig["broker"]["transport"]
         self.__certfile = config.mqttconfig["broker"]["certfile"]
         self.__tlsversion = config.mqttconfig["broker"]["tlsversion"]
@@ -31,7 +31,8 @@ class Messages:
         self.__keepalive = config.mqttconfig["broker"]["keepalive"]
 
         # A templace when we want to output a message - insert the payload in 'payload'
-        self.__output_message_template = {"mqttmessage": {"device": self.__device, "version": self.__version, "payload": {}}}
+        self.__output_message_template = {
+            "mqttmessage": {"device": self.__device, "version": self.__version, "payload": {}}}
 
         # The format of the payload
         self.__payloadtemplate = {"command": "", "params": {}}
