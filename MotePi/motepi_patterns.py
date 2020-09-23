@@ -2,9 +2,9 @@ import math
 import os
 import threading
 import time
+from colorsys import hsv_to_rgb
 
 import motephat as MotePi
-from colorsys import hsv_to_rgb
 
 """
 {"mqttmessage": {
@@ -92,9 +92,6 @@ class MotePiPatterns(threading.Thread):
 
     all50 = [50]
 
-    __police = [(all50, [0, 0, 255], 0.5),
-                (all50, [255, 0, 0], 0.5)]
-
     def __init__(self):
         """ Initialise the Mote """
         MotePi.configure_channel(1, 16, False)
@@ -104,9 +101,9 @@ class MotePiPatterns(threading.Thread):
         MotePi.set_clear_on_exit(True)
         self.__clearall()
 
-        self.__command = "nothing"
+        self.__command = ""
         self.__params = {}
-        self.__lastcommand = "nothing"
+        self.__lastcommand = ""
         self.__initial = True  # Is this the first time in this pattern?
         self.__tempvalues = {}  # A dict of values to use between calls to a pattern function
         self.__delay = 0.01  # Default delay
@@ -114,21 +111,32 @@ class MotePiPatterns(threading.Thread):
         super(MotePiPatterns, self).__init__()
 
     def run(self):
-        ''' Loop around, fetching the contents of the MQTT messages '''
+        """ Loop around, fetching the contents of the MQTT messages """
         while True:
             try:
-                self.redirection()
+                if self.__command != "":
+                    if self.__command == "police":
+                        self.__police()
+                    elif self.__command == "bilgetank":
+                        self.__bilgetank()
+                    elif self.__command == "matrix":
+                        self.__matrix()
+                    elif self.__command == "pastels":
+                        self.__pastels()
+                    elif self.__command == "pulsewhite":
+                        self.__pulsewhite()
+                    elif self.__command == "rainbow":
+                        self.__rainbow()
+                    elif self.__command == "power":
+                        self.__power(self.__params)
             except:
                 print("Error in the animation")
             finally:
-                self.idle()
-
-    def idle(self):
-        sleeptime = 0.5
-        if self.__command != "":
-            sleeptime = self.__delay
-            MotePi.show()
-        time.sleep(sleeptime)
+                if self.__command == "":
+                    time.sleep(0.5)
+                else:
+                    MotePi.show()
+                    time.sleep(self.__delay)
 
     def messagehandler(self, command, params):
         """ MQTT will call this method to handle the message """
@@ -138,23 +146,6 @@ class MotePiPatterns(threading.Thread):
             self.__initial = True
             self.__command = command
             self.__params = params
-
-    def redirection(self):
-        if self.__command != "":
-            if self.__command == "police":
-                self.__police()
-            elif self.__command == "bilgetank":
-                self.__bilgetank()
-            elif self.__command == "matrix":
-                self.__matrix()
-            elif self.__command == "pastels":
-                self.__pastels()
-            elif self.__command == "pulsewhite":
-                self.__pulsewhite()
-            elif self.__command == "rainbow":
-                self.__rainbow()
-            elif self.__command == "power":
-                self.__power(self.__params)
 
     # -----------------------------------------------------------------------------------------------------------------------
     # The Mote patterns are below here
@@ -179,12 +170,14 @@ class MotePiPatterns(threading.Thread):
             time.sleep(pause)
 
     # Sets the Mote all to one colour
-    def __setmatrixtocolour(self, colour, brightness):
+    @staticmethod
+    def __setmatrixtocolour(colour, brightness):
         MotePi.set_all(colour[0], colour[1], colour[2], brightness=brightness)
 
     # Draws the matrix pattern on the Mote with the matrix setting the brightness of each
     # pixel and colour setting the colour
-    def __drawmatrix(self, matrix, colour):
+    @staticmethod
+    def __drawmatrix(matrix, colour):
         count = len(matrix)
         red, green, blue = colour[0], colour[1], colour[2]
         for matrixelement in range(0, count):
@@ -200,7 +193,8 @@ class MotePiPatterns(threading.Thread):
 
             MotePi.set_pixel(channel + 1, index, r, g, b, brightness=brightness)
 
-    def __setbrighness(selfself, brightness):
+    @staticmethod
+    def __setbrighness(brightness):
         for channel in [1, 2, 3, 4]:
             for pixel in range(16):
                 MotePi.set_pixel(channel, pixel, 0, 0, 0, brightness=brightness)
@@ -234,7 +228,7 @@ class MotePiPatterns(threading.Thread):
             for pixel in range(16):
                 green = 0.1 + 0.9 * (
                         (pixel - self.__tempvalues["start"][channel - 1]) / (
-                            self.__tempvalues["length"][channel - 1] - 1))
+                        self.__tempvalues["length"][channel - 1] - 1))
                 if 0 > green or green > 1:
                     green = 0
                 else:
@@ -277,9 +271,6 @@ class MotePiPatterns(threading.Thread):
             self.__delay = 0.1
             self.__initial = False
 
-        # br = (math.sin(time.time()) + 1) / 2
-        # br *= 255.0
-        # br = int(br)
         br = self.__tempvalues["shade"] + self.__tempvalues["difference"]
         if br > 255.0 or br < 0.0:
             self.__tempvalues["difference"] = -self.__tempvalues["difference"]
